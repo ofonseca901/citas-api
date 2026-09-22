@@ -1,41 +1,33 @@
-# citas-api — incremento S2
+# citas-api
 
-Backend académico ejecutable: registro USER, login JWT, refresh con rotación, logout y consulta de identidad. Java 21, Spring Boot 3.5.16, Maven, arquitectura hexagonal, JPA, MySQL 8.4 y Flyway. Sin pacientes ni profesionales reales.
+Repositorio backend del proyecto. **No contiene implementación de negocio inicial**.
 
-## Ejecutar en este workspace
-Desde la raíz:
+## Debe ser construido por el estudiante
+- Java 21 + Spring Boot 3.5.x + Maven.
+- Arquitectura hexagonal.
+- MySQL + Flyway.
+- Spring Security + JWT access/refresh.
+- REST.
+- Pruebas.
+
+## Documentación compartida
+- `docs/FCV Dev/scrum/`: épicas/HU del proyecto.
+- `docs/FCV Dev/llm-wiki/`: única LLM Wiki global del workspace.
+- `docs/FCV Dev/subagents/`: catálogo operativo de subagentes del orquestador.
+- `automations/n8n/`: JSON exportados en S5/S6.
+
+Lee el PRD en la carpeta raíz antes de continuar Spring Boot.
+
+## Incremento de identidad backend
+
+Este incremento implementa HU-005/006/007 por REST; no incluye recuperación de contraseña. El contrato está en `docs/FCV Dev/llm-wiki/wiki/contracts.md`. Java 21/Spring Boot 3.5.0/Maven y la migración Flyway V1 se ejecutan en `develop`.
+
+Para desarrollo local, configura las variables de `.env.example` con valores propios fuera de Git y activa el perfil `local`. Los secretos JWT deben ser distintos y tener al menos 32 bytes. El perfil local usa cookie HTTP `SameSite=Lax`; el predeterminado requiere HTTPS y usa `SameSite=None; Secure`.
+
+En Windows con Docker Desktop, ejecuta las pruebas desde este directorio:
 
 ```powershell
-./scripts/start-s2.ps1
-docker compose logs -f citas-api-dev
+docker compose -f compose.test.yml run --rm api-test mvn test
 ```
 
-El script genera dos secretos JWT aleatorios en `.env.s2` (ignorado por Git) solo si el archivo no existe. El overlay S2 conecta al esquema `citas_fcv_training`, disponible en el volumen existente, e inicia la aplicación. Conserva `.env` y datos previos. En un entorno nuevo, configurar las variables del ejemplo raíz y asegurar que `MYSQL_DATABASE` y `DB_NAME` coincidan con ese esquema o ajustar el overlay antes de iniciar.
-
-Comando equivalente tras generar secretos: `docker compose --env-file .env --env-file .env.s2 -f docker-compose.yml -f docker-compose.s2.yml up -d`. Usar siempre el script/overlay para iniciar; `docker compose up` sin overlay vuelve al contenedor de herramientas de la plantilla.
-
-Health: http://localhost:8080/actuator/health. No hay usuarios ni contraseñas preconfigurados: registrarse con datos ficticios.
-
-## Ejecutar fuera de Docker
-Requiere Java 21 y Maven. Exportar las variables de `.env.example` en el proceso: Spring no carga automáticamente ese archivo. Crear una BD vacía accesible con la cuenta de aplicación. Definir dos secretos JWT diferentes de al menos 32 bytes, sin usar placeholders.
-
-```text
-mvn spring-boot:run
-```
-
-## Verificación
-```powershell
-docker compose exec -T citas-api-dev mvn -B -ntp verify
-node citas-api/scripts/smoke-auth.mjs
-```
-
-El primer comando ejecuta pruebas de integración con H2 aislado; no escribe en MySQL. El segundo requiere API activa y realiza el flujo HTTP contra su BD real; crea una cuenta sintética nueva por ejecución y revoca la sesión al terminar. No imprime secretos. Configurar `API_BASE_URL` si cambia el puerto.
-
-## Documentación
-- [Contrato REST](docs/wiki/llm-wiki/wiki/contrato-auth.md)
-- [Modelo 3FN inicial](docs/wiki/llm-wiki/wiki/modelo-datos.md)
-- [Wiki global](docs/wiki/llm-wiki/wiki/index.md)
-- [Historias S2](docs/wiki/scrum/README.md)
-- [Evidencias y pendientes](docs/wiki/llm-wiki/wiki/s2-evidencia.md)
-
-Agenda, citas, recuperación de contraseña y automatizaciones pertenecen a siguientes incrementos. Las HU y el diseño no se consideran aprobados sin confirmación del usuario.
+El contenedor Maven usa Java 21; Testcontainers crea un MySQL 8.4 temporal. No requiere Java/Maven instalados en el host.
