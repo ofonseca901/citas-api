@@ -17,3 +17,8 @@ Se añadió el contrato REST S4, la migración compatible V3 y evidencia de vali
 
 - HECHO: se publicó `GET /api/v1/professional/specialties` para el profesional autenticado. Expone especialidades asignadas y metadatos públicos, no persistentes, del resultado más reciente de PubMed; la ausencia temporal de la fuente se expresa de forma segura.
 - EVIDENCIA: imagen Docker de API y web construida; health de API y web respondió 200; prueba autenticada con datos sintéticos devolvió una especialidad y un artículo disponible.
+
+# 2026-09-25 — LEARN
+
+- HECHO: la sesión se invalida y revoca por 10 minutos sin actividad. La migración V5 añade `last_activity_at`; la API aplica la regla en identidad y refresh, y la web la refuerza sin persistir tokens.
+- EVIDENCIA: `AuthIntegrationTest` ejecutó 7 pruebas sin fallas, incluida la revocación tras 11 minutos; `npm run typecheck` y `npm run lint` finalizaron correctamente.
