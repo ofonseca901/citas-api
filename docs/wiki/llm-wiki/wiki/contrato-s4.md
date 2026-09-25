@@ -18,5 +18,8 @@ Las rutas nuevas se publican bajo `/api/v1`; las rutas S2/S3 se mantienen tempor
 | POST | `/api/v1/admin/reschedule-requests/{id}/decision` | ADMIN | Aprueba o rechaza |
 | GET | `/api/v1/professional/appointments?from&to&locationId` | PROFESSIONAL | Agenda propia |
 | POST | `/api/v1/professional/appointments/{id}/closure` | PROFESSIONAL | COMPLETED o NO_SHOW |
+| GET | `/api/v1/professional/specialties` | PROFESSIONAL | Especialidades propias y metadatos del artículo más reciente de PubMed |
 
 Conflictos de slots responden `409 CONFLICT`; validación de negocio responde `400 INVALID`; ownership o rol responde `403 FORBIDDEN`.
+
+`GET /api/v1/professional/specialties` no persiste contenido bibliográfico ni mezcla datos clínicos con usuarios. Consulta ESearch/ESummary de PubMed bajo demanda, conserva una caché en memoria de 30 minutos por especialidad y devuelve `latestArticle.available=false` si la fuente pública no está disponible.
