@@ -9,3 +9,6 @@
 # 2026-09-22 — LEARN
 
 - Se registró el contrato y evidencia inicial de S3. Fuente: `SchedulingController`, migración V2 y verificaciones aisladas. No se cerraron HU: faltan pruebas específicas y prueba manual por roles.
+# 2026-09-24 — S4
+
+Se añadió el contrato REST S4, la migración compatible V3 y evidencia de validación disponible. Las automatizaciones n8n permanecen diferidas a S5/S6.
