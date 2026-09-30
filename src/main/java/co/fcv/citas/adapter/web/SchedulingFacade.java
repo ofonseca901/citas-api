@@ -34,6 +34,12 @@ public class SchedulingFacade {
       for(LocalTime t=from;!t.plusMinutes(duration).isAfter(to);t=t.plusMinutes(30)){LocalDateTime at=LocalDateTime.of(date,t);boolean free=true;for(int i=0;i<duration/30;i++)free&=!data.slotTaken(pro,at.plusMinutes(30L*i))&&!data.held(pro,at.plusMinutes(30L*i));if(free){var row=new LinkedHashMap<>(b);row.put("startAt",at.toString());row.put("durationMinutes",duration);result.add(row);}}
     } return result;
   }
+  public List<Map<String,Object>> availabilityDates(long location,long specialty,LocalDate from,LocalDate to){
+    if (to.isBefore(from) || Duration.between(from.atStartOfDay(),to.plusDays(1).atStartOfDay()).toDays()>62) throw bad("El rango de disponibilidad debe tener entre 1 y 62 días.");
+    List<Map<String,Object>> result=new ArrayList<>();
+    for(LocalDate date=from;!date.isAfter(to);date=date.plusDays(1)) result.add(Map.of("date",date.toString(),"slots",availability(location,specialty,date).size()));
+    return result;
+  }
   @Transactional public long book(long patient,long professional,long location,long specialty,LocalDateTime start){
     if(start.isBefore(LocalDateTime.now(clock))) throw bad("No puedes reservar en el pasado."); var s=data.specialty(specialty).orElseThrow(()->bad("Especialidad inválida."));
     if(!data.serves(professional,specialty,location)) throw bad("El profesional no atiende esa especialidad o sede."); int minutes=((Number)s.get("duration_minutes")).intValue(); LocalDateTime end=start.plusMinutes(minutes);

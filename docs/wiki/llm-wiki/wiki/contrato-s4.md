@@ -24,6 +24,17 @@ Conflictos de slots responden `409 CONFLICT`; validación de negocio responde `4
 
 `GET /api/v1/professional/specialties` no persiste contenido bibliográfico ni mezcla datos clínicos con usuarios. Consulta ESearch/ESummary de PubMed bajo demanda, conserva una caché en memoria de 30 minutos por especialidad y devuelve `latestArticle.available=false` si la fuente pública no está disponible.
 
+## Administración de cuentas y calendario
+
+| Método | Ruta | Rol | Función |
+|---|---|---|---|
+| POST | `/api/v1/admin/users` | ADMIN | Crea una cuenta individual USER, ADMIN o PROFESSIONAL |
+| GET | `/api/v1/availability/dates?locationId&specialtyId&from&to` | Público | Devuelve por día el número de slots disponibles para un rango de hasta 62 días |
+
+`POST /api/v1/admin/users` recibe identidad, contraseña y `role`. Para `PROFESSIONAL` exige el objeto `professional` con `professionalCode`, `licenseNumber`, `specialtyIds`, `primarySpecialtyId` y `locationIds`; las especialidades y sedes deben estar activas y la primaria debe pertenecer a la lista. La cuenta recibe un único rol inicial y toda la creación se confirma o revierte en una transacción. El endpoint nunca devuelve contraseñas ni hashes.
+
+El registro público `/api/auth/register` permanece limitado a `USER`. Un duplicado de identidad, correo, código o matrícula responde `409 DUPLICATE`; una solicitud profesional incompleta o asignaciones inválidas responde `400 INVALID`; cualquier solicitante no ADMIN recibe `403 FORBIDDEN`.
+
 ## Seguridad de inactividad
 
 Las sesiones se revocan después de 10 minutos sin actividad autenticada. La API actualiza la actividad al validar una petición o rotar el refresh token; el cliente también cierra su sesión en memoria al alcanzar ese límite. El parámetro operativo es `SESSION_INACTIVITY_MINUTES` y solo admite valores entre 1 y 60.

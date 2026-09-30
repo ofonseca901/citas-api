@@ -23,6 +23,7 @@ sources:
 - [Contrato REST S3](contrato-s3.md) — catálogos, disponibilidad, reservas y decisión administrativa.
 - [Evidencia y pendientes S2](s2-evidencia.md) — comandos, resultados, límites y aprobaciones pendientes.
 - [Evidencia S3](s3-evidencia.md) — migración, compilaciones y limitaciones verificadas.
+- [Evidencia S4](s4-evidencia.md) — verificaciones y loops ejecutados para el alcance S4.
 - [Decisiones](decisiones.md) — decisiones explícitas separadas de hechos y propuestas.
 - [Riesgos y preguntas abiertas](riesgos.md) — contradicciones, dependencias y decisiones que requieren confirmación.
 - [Preferencias y guardrails](preferencias.md) — convenciones duraderas del laboratorio.

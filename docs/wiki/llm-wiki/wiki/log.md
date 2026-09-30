@@ -22,3 +22,7 @@ Se añadió el contrato REST S4, la migración compatible V3 y evidencia de vali
 
 - HECHO: la sesión se invalida y revoca por 10 minutos sin actividad. La migración V5 añade `last_activity_at`; la API aplica la regla en identidad y refresh, y la web la refuerza sin persistir tokens.
 - EVIDENCIA: `AuthIntegrationTest` ejecutó 7 pruebas sin fallas, incluida la revocación tras 11 minutos; `npm run typecheck` y `npm run lint` finalizaron correctamente.
+
+# 2026-09-30 — LEARN
+
+- HECHO: el contrato S4 incorpora creación ADMIN de USER, ADMIN y PROFESSIONAL y disponibilidad agregada por fecha; la evidencia ejecutada distingue este incremento del MVP S4 pendiente.

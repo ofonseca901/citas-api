@@ -137,4 +137,24 @@ class AuthIntegrationTest {
         mvc.perform(options("/api/auth/login").header("Origin", "https://untrusted.example").header("Access-Control-Request-Method", "POST"))
                 .andExpect(status().isForbidden()).andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
     }
+
+    @Test void adminCreatesSingleRoleAccountsAndProfessionalAssignments() throws Exception {
+        var admin = registration(); postJson("/register", admin).andExpect(status().isCreated());
+        Long adminId = jdbc.queryForObject("select id from app_users where email=?", Long.class, admin.get("email"));
+        jdbc.update("insert into user_roles(user_id,role_code) values(?,?)", adminId, "ADMIN");
+        String token = login(admin).path("accessToken").asText();
+        var administrator = Map.of("firstName", "Admin", "lastName", "Sintetico", "documentType", "CC", "documentNumber", "90012345", "email", "new-admin@example.test", "phone", "3000000001", "password", "Prueba-S4-2026!", "role", "ADMIN");
+        mvc.perform(post("/api/v1/admin/users").header("Authorization", "Bearer " + token).contentType("application/json").content(json.writeValueAsBytes(administrator))).andExpect(status().isCreated());
+        Long specialtyId = jdbc.queryForObject("select id from specialties where code='MEDICINA_GENERAL'", Long.class);
+        Long locationId = jdbc.queryForObject("select id from locations where code='HIC'", Long.class);
+        var professional = Map.of("firstName", "Pro", "lastName", "Sintetico", "documentType", "CC", "documentNumber", "90012346", "email", "new-professional@example.test", "phone", "3000000002", "password", "Prueba-S4-2026!", "role", "PROFESSIONAL", "professional", Map.of("professionalCode", "PRO-S4-001", "licenseNumber", "LIC-S4-001", "specialtyIds", List.of(specialtyId), "primarySpecialtyId", specialtyId, "locationIds", List.of(locationId)));
+        mvc.perform(post("/api/v1/admin/users").header("Authorization", "Bearer " + token).contentType("application/json").content(json.writeValueAsBytes(professional))).andExpect(status().isCreated());
+        assertThat(jdbc.queryForObject("select count(*) from user_roles ur join app_users u on u.id=ur.user_id where u.email=? and ur.role_code='ADMIN'", Integer.class, "new-admin@example.test")).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from professionals p join app_users u on u.id=p.user_id where u.email=?", Integer.class, "new-professional@example.test")).isEqualTo(1);
+    }
+
+    @Test void availabilityCalendarRangeIsPublicAndReturnsEveryRequestedDay() throws Exception {
+        mvc.perform(get("/api/v1/availability/dates").param("locationId", "1").param("specialtyId", "1").param("from", "2030-01-01").param("to", "2030-01-07"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].date").value("2030-01-01")).andExpect(jsonPath("$[6].date").value("2030-01-07"));
+    }
 }

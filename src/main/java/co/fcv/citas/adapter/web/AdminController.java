@@ -7,8 +7,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
   private final JdbcTemplate jdbc; private final AuthPorts.Passwords passwords;
   public AdminController(JdbcTemplate jdbc, AuthPorts.Passwords passwords){this.jdbc=jdbc;this.passwords=passwords;}
-  public record UserRequest(@NotBlank @Size(max=100) String firstName,@NotBlank @Size(max=100) String lastName,@NotBlank @Pattern(regexp="CC|CE|TI|PA|PPT") String documentType,@NotBlank @Size(max=30) String documentNumber,@NotBlank @Email String email,@NotBlank @Size(max=25) String phone,@NotBlank @Size(min=8,max=72) String password){}
+  public record ProfessionalData(@NotBlank @Size(max=40) String professionalCode,@NotBlank @Size(max=80) String licenseNumber,@NotEmpty List<@Positive Long> specialtyIds,@Positive Long primarySpecialtyId,@NotEmpty List<@Positive Long> locationIds) {}
+  public record UserRequest(@NotBlank @Size(max=100) String firstName,@NotBlank @Size(max=100) String lastName,@NotBlank @Pattern(regexp="CC|CE|TI|PA|PPT") String documentType,@NotBlank @Size(max=30) String documentNumber,@NotBlank @Email String email,@NotBlank @Size(max=25) String phone,@NotBlank @Size(min=8,max=72) String password,@Pattern(regexp="USER|PROFESSIONAL|ADMIN") String role,@Valid ProfessionalData professional){}
   public record ActiveRequest(boolean active){}
   @GetMapping("/users") public Map<String,Object> users(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="20") @Min(1) @Max(100) int size){
     String like="%"+q.strip()+"%"; int offset=page*size;
@@ -25,8 +28,26 @@ public class AdminController {
     Integer total=jdbc.queryForObject("select count(*) from app_users where first_name like ? or last_name like ? or email like ? or document_number like ?",Integer.class,like,like,like,like);
     return Map.of("items",items,"total",Objects.requireNonNullElse(total,0),"page",page,"size",size);
   }
-  @PostMapping("/users") @ResponseStatus(HttpStatus.CREATED) public Map<String,Long> create(@Valid @RequestBody UserRequest r){
-    try { jdbc.update("insert into app_users(first_name,last_name,document_type,document_number,email,phone,password_hash,active,created_at) values(?,?,?,?,?,?,?,?,?)",r.firstName().strip(),r.lastName().strip(),r.documentType(),r.documentNumber().strip(),r.email().strip().toLowerCase(Locale.ROOT),r.phone().strip(),passwords.hash(r.password()),true,Timestamp.from(Instant.now())); Long id=jdbc.queryForObject("select id from app_users where email=?",Long.class,r.email().strip().toLowerCase(Locale.ROOT)); jdbc.update("insert into user_roles(user_id,role_code) values(?, 'USER')",id); return Map.of("id",id); }catch(Exception e){throw new ApiErrors.RequestFailure(409,"DUPLICATE","El correo o documento ya existe.");}
+  @PostMapping("/users") @ResponseStatus(HttpStatus.CREATED) @Transactional public Map<String,Long> create(@Valid @RequestBody UserRequest r){
+    String role = r.role() == null ? "USER" : r.role();
+    if ("PROFESSIONAL".equals(role) && r.professional() == null) throw new ApiErrors.RequestFailure(400,"INVALID","El profesional requiere código, matrícula, especialidades y sedes.");
+    if (!"PROFESSIONAL".equals(role) && r.professional() != null) throw new ApiErrors.RequestFailure(400,"INVALID","Los datos profesionales solo aplican a PROFESSIONAL.");
+    try {
+      jdbc.update("insert into app_users(first_name,last_name,document_type,document_number,email,phone,password_hash,active,created_at) values(?,?,?,?,?,?,?,?,?)",r.firstName().strip(),r.lastName().strip(),r.documentType(),r.documentNumber().strip(),r.email().strip().toLowerCase(Locale.ROOT),r.phone().strip(),passwords.hash(r.password()),true,Timestamp.from(Instant.now()));
+      Long id=jdbc.queryForObject("select id from app_users where email=?",Long.class,r.email().strip().toLowerCase(Locale.ROOT));
+      jdbc.update("insert into user_roles(user_id,role_code) values(?, ?)",id,role);
+      if (r.professional() != null) createProfessional(id,r.professional());
+      return Map.of("id",id);
+    } catch(DataIntegrityViolationException e){ throw new ApiErrors.RequestFailure(409,"DUPLICATE","El correo, documento, código o matrícula ya existe."); }
+  }
+  private void createProfessional(long userId, ProfessionalData data) {
+    if (!data.specialtyIds().contains(data.primarySpecialtyId()) || new HashSet<>(data.specialtyIds()).size() != data.specialtyIds().size() || new HashSet<>(data.locationIds()).size() != data.locationIds().size()) throw new ApiErrors.RequestFailure(400,"INVALID","Las asignaciones profesionales deben ser únicas e incluir una especialidad primaria.");
+    if (jdbc.queryForObject("select count(*) from specialties where active=true and id in (" + String.join(",", Collections.nCopies(data.specialtyIds().size(), "?")) + ")",Integer.class,data.specialtyIds().toArray()) != data.specialtyIds().size()) throw new ApiErrors.RequestFailure(400,"INVALID","Todas las especialidades deben estar activas.");
+    if (jdbc.queryForObject("select count(*) from locations where active=true and id in (" + String.join(",", Collections.nCopies(data.locationIds().size(), "?")) + ")",Integer.class,data.locationIds().toArray()) != data.locationIds().size()) throw new ApiErrors.RequestFailure(400,"INVALID","Todas las sedes deben estar activas.");
+    jdbc.update("insert into professionals(user_id,professional_code,license_number,active) values(?,?,?,true)",userId,data.professionalCode().strip(),data.licenseNumber().strip());
+    Long professionalId=jdbc.queryForObject("select id from professionals where user_id=?",Long.class,userId);
+    for (Long specialtyId : data.specialtyIds()) jdbc.update("insert into professional_specialties(professional_id,specialty_id,primary_specialty) values(?,?,?)",professionalId,specialtyId,specialtyId.equals(data.primarySpecialtyId()));
+    for (Long locationId : data.locationIds()) jdbc.update("insert into professional_locations(professional_id,location_id) values(?,?)",professionalId,locationId);
   }
   @PatchMapping("/users/{id}/active") @ResponseStatus(HttpStatus.NO_CONTENT) public void userActive(@PathVariable long id,@RequestBody ActiveRequest r){if(jdbc.update("update app_users set active=? where id=?",r.active(),id)==0)throw new ApiErrors.RequestFailure(404,"NOT_FOUND","Usuario inexistente.");}
   @GetMapping("/professionals") public List<Map<String,Object>> professionals(){return jdbc.queryForList("select p.id,p.professional_code as professionalCode,p.license_number as licenseNumber,p.active,u.id as userId,u.first_name as firstName,u.last_name as lastName,u.email,group_concat(distinct s.name order by s.name) as specialties,group_concat(distinct l.name order by l.name) as locations from professionals p join app_users u on u.id=p.user_id left join professional_specialties ps on ps.professional_id=p.id left join specialties s on s.id=ps.specialty_id left join professional_locations pl on pl.professional_id=p.id left join locations l on l.id=pl.location_id group by p.id order by u.last_name,u.first_name");}
