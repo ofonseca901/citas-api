@@ -28,6 +28,11 @@ sources:
 - [Riesgos y preguntas abiertas](riesgos.md) — contradicciones, dependencias y decisiones que requieren confirmación.
 - [Preferencias y guardrails](preferencias.md) — convenciones duraderas del laboratorio.
 
+## S5
+
+- [Contrato S5](contrato-s5.md) — Swagger y lectura mínima para WF-001.
+- [Seguridad, n8n y MCP](s5-security-and-n8n.md) — guardrails y estado de integración externa.
+
 ## Gobierno de la memoria
 
 - [Registro de cambios](log.md) — cronología append-only de INGEST, QUERY, LEARN y LINT.

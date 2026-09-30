@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:citas;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "spring.datasource.username=sa", "spring.datasource.password=", "spring.datasource.driver-class-name=org.h2.Driver",
-        "app.password-reset.mailbox-enabled=true"
+        "app.password-reset.mailbox-enabled=true", "app.automation.reminder-token=test-reminder-service-token"
 })
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
@@ -171,5 +171,14 @@ class AuthIntegrationTest {
         mvc.perform(post("/api/v1/auth/password-reset").contentType("application/json").content(json.writeValueAsBytes(Map.of("code",code,"password","Nueva-S4-2026!")))).andExpect(status().isNoContent());
         mvc.perform(post("/api/v1/auth/password-reset").contentType("application/json").content(json.writeValueAsBytes(Map.of("code",code,"password","Nueva-S4-2026!")))).andExpect(status().isBadRequest());
         login(new HashMap<>(Map.of("email",patient.get("email"),"password","Nueva-S4-2026!")));
+    }
+
+    @Test void swaggerAndReminderReadModelHaveExplicitAccessRules() throws Exception {
+        mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andExpect(jsonPath("info.title").value("FCV Citas API"));
+        mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/automation/appointment-reminders").param("from","2030-01-01").param("to","2030-01-02"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/automation/appointment-reminders").header("X-Reminder-Token","test-reminder-service-token").param("from","2030-01-01").param("to","2030-01-02"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
     }
 }

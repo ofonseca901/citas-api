@@ -40,3 +40,5 @@ app:
     inactivity-minutes: ${SESSION_INACTIVITY_MINUTES:10}
   password-reset:
     mailbox-enabled: ${PASSWORD_RESET_MAILBOX_ENABLED:false}
+  automation:
+    reminder-token: ${REMINDER_AUTOMATION_TOKEN:}

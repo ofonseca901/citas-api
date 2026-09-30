@@ -1,0 +1,14 @@
+{
+  "name": "WF-001 Appointment Reminders (sanitized template)",
+  "nodes": [
+    {"parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 24}]}}, "id": "schedule", "name": "Schedule Trigger", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 0]},
+    {"parameters": {"method": "GET", "url": "={{ $env.REMINDER_API_BASE_URL + '/api/v1/automation/appointment-reminders?from=' + $now.toISODate() + '&to=' + $now.plus({days: 1}).toISODate() }}", "sendHeaders": true, "headerParameters": {"parameters": [{"name": "X-Reminder-Token", "value": "={{ $credentials.reminderApiToken }}"}]}}, "id": "appointments", "name": "Read approved appointments", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [240, 0]},
+    {"parameters": {"jsCode": "// One item per eligible appointment. Deduplicate externally by appointmentId + scheduledStartAt.\nreturn $input.all();"}, "id": "dedupe", "name": "Prepare reminder", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 0]},
+    {"parameters": {"sendTo": "={{ $json.recipientEmail }}", "subject": "Recordatorio de cita", "message": "={{ 'Recordatorio: ' + $json.specialty + ' en ' + $json.location + ', ' + $json.scheduledStartAt }}"}, "id": "gmail", "name": "Send synthetic reminder", "type": "n8n-nodes-base.gmail", "typeVersion": 2.1, "position": [720, 0], "credentials": {"gmailOAuth2": {"id": "REPLACE_IN_N8N", "name": "Configured in n8n only"}}},
+    {"parameters": {"jsCode": "return [{json: {appointmentId: $json.appointmentId, result: 'prepared'}}];"}, "id": "result", "name": "Record result", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [960, 0]}
+  ],
+  "connections": {"Schedule Trigger": {"main": [[{"node": "Read approved appointments", "type": "main", "index": 0}]]}, "Read approved appointments": {"main": [[{"node": "Prepare reminder", "type": "main", "index": 0}]]}, "Prepare reminder": {"main": [[{"node": "Send synthetic reminder", "type": "main", "index": 0}]]}, "Send synthetic reminder": {"main": [[{"node": "Record result", "type": "main", "index": 0}]]}},
+  "active": false,
+  "settings": {},
+  "meta": {"template": true, "security": "Credentials and endpoint are configured externally; this export is intentionally inactive."}
+}
