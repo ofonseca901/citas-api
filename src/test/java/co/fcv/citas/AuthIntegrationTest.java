@@ -24,7 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:citas;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.username=sa", "spring.datasource.password=", "spring.datasource.driver-class-name=org.h2.Driver"
+        "spring.datasource.username=sa", "spring.datasource.password=", "spring.datasource.driver-class-name=org.h2.Driver",
+        "app.password-reset.mailbox-enabled=true"
 })
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
@@ -156,5 +157,19 @@ class AuthIntegrationTest {
     @Test void availabilityCalendarRangeIsPublicAndReturnsEveryRequestedDay() throws Exception {
         mvc.perform(get("/api/v1/availability/dates").param("locationId", "1").param("specialtyId", "1").param("from", "2030-01-01").param("to", "2030-01-07"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].date").value("2030-01-01")).andExpect(jsonPath("$[6].date").value("2030-01-07"));
+    }
+
+    @Test void recoveryUsesGenericRequestAndConsumesCodeOnce() throws Exception {
+        var patient=registration(); postJson("/register",patient).andExpect(status().isCreated());
+        var admin=registration(); postJson("/register",admin).andExpect(status().isCreated());
+        Long adminId=jdbc.queryForObject("select id from app_users where email=?",Long.class,admin.get("email"));
+        jdbc.update("insert into user_roles(user_id,role_code) values(?,?)",adminId,"ADMIN");
+        mvc.perform(post("/api/v1/auth/password-recovery").contentType("application/json").content(json.writeValueAsBytes(Map.of("email",patient.get("email"))))).andExpect(status().isAccepted());
+        String adminToken=login(admin).path("accessToken").asText();
+        JsonNode mailbox=json.readTree(mvc.perform(get("/api/v1/admin/password-reset-mailbox").header("Authorization","Bearer "+adminToken)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        String code=mailbox.get(0).path("code").asText(); assertThat(code).hasSize(8);
+        mvc.perform(post("/api/v1/auth/password-reset").contentType("application/json").content(json.writeValueAsBytes(Map.of("code",code,"password","Nueva-S4-2026!")))).andExpect(status().isNoContent());
+        mvc.perform(post("/api/v1/auth/password-reset").contentType("application/json").content(json.writeValueAsBytes(Map.of("code",code,"password","Nueva-S4-2026!")))).andExpect(status().isBadRequest());
+        login(new HashMap<>(Map.of("email",patient.get("email"),"password","Nueva-S4-2026!")));
     }
 }

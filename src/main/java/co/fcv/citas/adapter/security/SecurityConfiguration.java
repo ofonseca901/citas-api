@@ -20,7 +20,7 @@ public class SecurityConfiguration {
         return http.csrf(csrf -> csrf.disable()).cors(cors -> {})
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/v1/auth/password-recovery", "/api/v1/auth/password-reset").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/catalogs/**", "/api/availability/**", "/api/v1/catalogs/**", "/api/v1/availability/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/actuator/health").permitAll()
                         .anyRequest().authenticated())
