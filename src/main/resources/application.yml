@@ -42,3 +42,7 @@ app:
     mailbox-enabled: ${PASSWORD_RESET_MAILBOX_ENABLED:false}
   automation:
     reminder-token: ${REMINDER_AUTOMATION_TOKEN:}
+    summary-token: ${SUMMARY_AUTOMATION_TOKEN:}
+    webhook-enabled: ${N8N_WEBHOOK_ENABLED:false}
+    webhook-url: ${N8N_WEBHOOK_URL:}
+    webhook-bearer-token: ${N8N_WEBHOOK_BEARER_TOKEN:}

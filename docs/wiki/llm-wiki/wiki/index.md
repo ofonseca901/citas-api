@@ -33,6 +33,11 @@ sources:
 - [Contrato S5](contrato-s5.md) — Swagger y lectura mínima para WF-001.
 - [Seguridad, n8n y MCP](s5-security-and-n8n.md) — guardrails y estado de integración externa.
 
+## S6
+
+- [Contrato S6](contrato-s6.md) â€” endpoints de automatizaciÃ³n, outbox y minimizaciÃ³n de datos.
+- [Evidencia S6](s6-evidencia.md) â€” verificaciones locales y dependencias externas pendientes.
+
 ## Gobierno de la memoria
 
 - [Registro de cambios](log.md) — cronología append-only de INGEST, QUERY, LEARN y LINT.

@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:citas;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "spring.datasource.username=sa", "spring.datasource.password=", "spring.datasource.driver-class-name=org.h2.Driver",
-        "app.password-reset.mailbox-enabled=true", "app.automation.reminder-token=test-reminder-service-token"
+        "app.password-reset.mailbox-enabled=true", "app.automation.reminder-token=test-reminder-service-token", "app.automation.summary-token=test-summary-service-token"
 })
 @AutoConfigureMockMvc
 class AuthIntegrationTest {
@@ -180,5 +180,7 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/automation/appointment-reminders").header("X-Reminder-Token","test-reminder-service-token").param("from","2030-01-01").param("to","2030-01-02"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$").isArray());
+        mvc.perform(get("/api/v1/automation/daily-summary").param("date", "2030-01-01")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/automation/daily-summary").header("X-Summary-Token","test-summary-service-token").param("date", "2030-01-01")).andExpect(status().isBadRequest());
     }
 }
