@@ -26,3 +26,9 @@ Se añadió el contrato REST S4, la migración compatible V3 y evidencia de vali
 # 2026-09-30 — LEARN
 
 - HECHO: el contrato S4 incorpora creación ADMIN de USER, ADMIN y PROFESSIONAL y disponibilidad agregada por fecha; la evidencia ejecutada distingue este incremento del MVP S4 pendiente.
+
+# 2026-10-04 - VERIFY
+
+- HECHO: los workflows n8n `WF-001`, `WF-002` y `WF-003` son JSON valido y usan nombres terminados en `OscarF`.
+- HECHO: el outbox de cambios de estado preserva `previousStatus` para decisiones administrativas, decisiones de reprogramacion y cancelaciones.
+- LIMITACION: no hay herramienta MCP/n8n conectada en la sesion; Docker Desktop respondio `500 Internal Server Error`, por lo que la ejecucion Cloud y el levantamiento local quedan pendientes de acceso externo reparado.

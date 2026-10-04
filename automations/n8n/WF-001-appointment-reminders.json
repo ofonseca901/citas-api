@@ -1,5 +1,5 @@
 {
-  "name": "WF-001 Appointment Reminders (sanitized template)",
+  "name": "WF-001 Appointment Reminders OscarF",
   "nodes": [
     {"parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 24}]}}, "id": "schedule", "name": "Schedule Trigger", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 0]},
     {"parameters": {"method": "GET", "url": "={{ $env.REMINDER_API_BASE_URL + '/api/v1/automation/appointment-reminders?from=' + $now.toISODate() + '&to=' + $now.plus({days: 1}).toISODate() }}", "sendHeaders": true, "headerParameters": {"parameters": [{"name": "X-Reminder-Token", "value": "={{ $credentials.reminderApiToken }}"}]}}, "id": "appointments", "name": "Read approved appointments", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [240, 0]},
